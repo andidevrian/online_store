@@ -1,101 +1,261 @@
-########################
-What is this repository?
-########################
+# Inventory API - Flash Sale Challenge
 
-|tests| |php| |version| |downloads|
+## Overview
 
-.. |tests| image:: https://github.com/pocketarc/codeigniter/actions/workflows/test-phpunit.yml/badge.svg?branch=develop
-   :target: https://github.com/pocketarc/codeigniter/actions/workflows/test-phpunit.yml
-   :alt: PHPUnit Tests
+Inventory API adalah REST API sederhana yang dibangun menggunakan CodeIgniter 3 untuk mensimulasikan proses pembelian produk saat flash sale.
 
-.. |php| image:: https://img.shields.io/badge/PHP-5.4%20--%208.5-8892BF?logo=php
-   :alt: PHP 5.4 - 8.5
+Fitur utama:
 
-.. |version| image:: https://img.shields.io/packagist/v/pocketarc/codeigniter
-   :target: https://packagist.org/packages/pocketarc/codeigniter
-   :alt: Packagist Version
+* Melihat daftar produk
+* Membuat pesanan (order)
+* Mengurangi stok secara otomatis
+* Mencegah overselling menggunakan database transaction dan row locking (`SELECT ... FOR UPDATE`)
+* Simulasi concurrent requests menggunakan PHP cURL Multi
 
-.. |downloads| image:: https://img.shields.io/packagist/dt/pocketarc/codeigniter
-   :alt: Packagist Downloads
+---
 
-This is a fork of CodeIgniter 3, with the goal of keeping it up to date with modern PHP versions. There is no intention to add new features or change the way CI3 works. This is purely a maintenance fork.
+## Tech Stack
 
-**PHP Compatibility:**
+* PHP 7.4+
+* CodeIgniter 3
+* MySQL / MariaDB
+* InnoDB Engine
 
-- ✅ PHP 5.4 - 8.1 (as per original CI3 support)
-- ✅ PHP 8.2
-- ✅ PHP 8.3
-- ✅ PHP 8.4
-- ✅ PHP 8.5 (and beyond as they are released)
+---
 
-The original CodeIgniter 3.x branch is no longer maintained, and has not been updated to work with PHP 8.2, or any newer version. This fork is intended to fill that gap.
+## Installation
 
-If the original CodeIgniter 3.x branch is updated to work with PHP 8.2+, and starts to be maintained again, this fork might be retired.
+### 1. Clone Repository
 
-********************
-Maintenance Policy
-********************
+```bash
+git clone https://github.com/username/inventory-api.git
+cd inventory-api
+```
 
-This fork commits to:
+### 2. Create Database
 
-- Maintaining compatibility with each new PHP version while still supporting PHP 5.4+
-- Applying critical security fixes
-- Keeping changes minimal to preserve CI3 behavior
-- Reverting breaking changes in CodeIgniter 3.2.0-dev to maintain backward compatibility (e.g. restoring the Cart library, Email helper, and other deprecated-but-removed functionality)
-- Running the full CI3 test suite on PHP 8.2+
+Masuk ke MySQL:
 
-If you find something that was removed in CI 3.2.0-dev and breaks backward compatibility for your application, please open an issue. We're happy to restore it.
+```sql
+CREATE DATABASE db_inventory;
+```
 
-This fork does NOT:
+Import schema:
 
-- Add new features
-- Change existing CI3 behavior
-- Provide commercial support
-- Make migration to CI4 any harder (or easier)
+```bash
+mysql -u root -p db_inventory < schema.sql
+```
 
-****************
-Issues and Pulls
-****************
+### 3. Configure Database
 
-Issues and Pull Requests are welcome, but please note that this is a maintenance fork. New features will not be accepted. If you have a new feature you would like to see in CodeIgniter, please submit it to the original CodeIgniter 3.x branch.
+Edit file:
 
-*******************
-Server Requirements
-*******************
+```text
+application/config/database.php
+```
 
-PHP version 5.4 or newer, same as the original CI3 requirements.
+Contoh:
 
-************
-Installation
-************
+```php
+$db['default'] = array(
+    'hostname' => 'localhost',
+    'username' => 'root',
+    'password' => '',
+    'database' => 'db_inventory',
+    'dbdriver' => 'mysqli',
+);
+```
 
-You can install this fork using Composer:
+### 4. Run Application
 
-.. code-block:: bash
+Menggunakan Laragon atau Apache:
 
-	composer require pocketarc/codeigniter
+```text
+http://localhost:8080/inventory-api
+```
 
-After installation, you need to point CodeIgniter to the new system directory. In your `index.php` file, update the `$system_path` variable:
+---
 
-.. code-block:: php
+## Database Structure
 
-	$system_path = 'vendor/pocketarc/codeigniter/system';
+### products
 
-**Alternative Installation (Manual)**
+| Column     | Type      |
+| ---------- | --------- |
+| id         | INT       |
+| name       | VARCHAR   |
+| price      | DECIMAL   |
+| inventory  | INT       |
+| created_at | TIMESTAMP |
 
-If you prefer the traditional approach of replacing the system directory:
+### orders
 
-1. Download this repository
-2. Replace your existing `system/` directory with the one from this fork
-3. No changes to `index.php` are needed with this method
+| Column       | Type      |
+| ------------ | --------- |
+| id           | INT       |
+| total_amount | DECIMAL   |
+| created_at   | TIMESTAMP |
 
-**Note:** The Composer method makes future updates easier with `composer update`, while the manual method requires downloading and replacing the system directory each time.
+### order_items
 
-**Upgrading from Original CI3**
+| Column     | Type      |
+| ---------- | --------- |
+| id         | INT       |
+| order_id   | INT       |
+| product_id | INT       |
+| qty        | INT       |
+| price      | DECIMAL   |
+| created_at | TIMESTAMP |
 
-This fork is based on the unreleased CodeIgniter 3.2.0-dev. For most
-applications the upgrade is straightforward: install via Composer,
-update your `$system_path`, and review the upgrade guide.
+---
 
-The upgrade guide covers both 3.1.x and 3.2-dev users:
-`upgrade_320.rst <user_guide_src/source/installation/upgrade_320.rst>`_
+## API Endpoints
+
+### Get Products
+
+Request:
+
+```http
+GET /api/products
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "1",
+      "name": "Flash Sale Product",
+      "price": "100000.00",
+      "inventory": "10"
+    }
+  ]
+}
+```
+
+---
+
+### Create Order
+
+Request:
+
+```http
+POST /api/orders
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{
+  "product_id": 1,
+  "qty": 1
+}
+```
+
+Success Response:
+
+```json
+{
+  "success": true,
+  "message": "Order created",
+  "order_id": 1
+}
+```
+
+Failed Response:
+
+```json
+{
+  "success": false,
+  "message": "Insufficient inventory"
+}
+```
+
+---
+
+## Testing
+
+### Reset Inventory
+
+```sql
+SET FOREIGN_KEY_CHECKS = 0;
+
+TRUNCATE TABLE order_items;
+TRUNCATE TABLE orders;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+UPDATE products
+SET inventory = 10
+WHERE id = 1;
+```
+
+---
+
+### Run Flash Sale Test
+
+```bash
+php tests/FlashSaleTest.php
+```
+
+Expected Result:
+
+```text
+SUCCESS : 10
+FAILED  : 90
+```
+
+Karena stok produk hanya tersedia 10 unit.
+
+---
+
+## Concurrency Handling
+
+Untuk mencegah overselling saat flash sale, aplikasi menggunakan:
+
+* Database Transaction
+* SELECT ... FOR UPDATE
+* InnoDB Row Locking
+
+Contoh:
+
+```sql
+SELECT *
+FROM products
+WHERE id = ?
+FOR UPDATE;
+```
+
+Dengan pendekatan ini, hanya satu transaksi yang dapat mengubah stok produk pada satu waktu.
+
+---
+
+## Project Structure
+
+```text
+application/
+├── controllers/
+│   └── api/
+│       ├── Products.php
+│       └── Orders.php
+├── models/
+│   ├── Product_model.php
+│   └── Order_model.php
+├── core/
+│   └── MY_Controller.php
+
+tests/
+└── FlashSaleTest.php
+
+schema.sql
+README.md
+```
+
+---
+
+## Author
+
+Developed as a Flash Sale Inventory API Challenge using CodeIgniter 3 and MySQL.
