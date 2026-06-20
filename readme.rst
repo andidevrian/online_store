@@ -242,5 +242,6 @@ README.md
 ---
 
 ## Author
-
-Developed as a Flash Sale Inventory API Challenge using CodeIgniter 3 and MySQL.
+Andi Devrian 
+Fullstack Engineer 
+Assessment Test Project
