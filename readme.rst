@@ -27,36 +27,33 @@ Fitur utama:
 
 ### 1. Clone Repository
 
-```bash
+bash
 git clone https://github.com/username/inventory-api.git
 cd inventory-api
-```
 
 ### 2. Create Database
 
 Masuk ke MySQL:
 
-```sql
+sql
 CREATE DATABASE db_inventory;
-```
 
 Import schema:
 
-```bash
+bash
 mysql -u root -p db_inventory < schema.sql
-```
+
 
 ### 3. Configure Database
 
 Edit file:
 
-```text
+text
 application/config/database.php
-```
 
 Contoh:
 
-```php
+php
 $db['default'] = array(
     'hostname' => 'localhost',
     'username' => 'root',
@@ -70,9 +67,8 @@ $db['default'] = array(
 
 Menggunakan Laragon atau Apache:
 
-```text
+text
 http://localhost:8080/inventory-api
-```
 
 ---
 
@@ -121,7 +117,7 @@ GET /api/products
 
 Response:
 
-```json
+json
 {
   "success": true,
   "data": [
@@ -133,7 +129,6 @@ Response:
     }
   ]
 }
-```
 
 ---
 
@@ -141,38 +136,31 @@ Response:
 
 Request:
 
-```http
+http
 POST /api/orders
 Content-Type: application/json
-```
 
 Body:
-
-```json
+json
 {
   "product_id": 1,
   "qty": 1
 }
-```
 
 Success Response:
-
-```json
+json
 {
   "success": true,
   "message": "Order created",
   "order_id": 1
 }
-```
 
 Failed Response:
-
-```json
+json
 {
   "success": false,
   "message": "Insufficient inventory"
 }
-```
 
 ---
 
@@ -180,7 +168,7 @@ Failed Response:
 
 ### Reset Inventory
 
-```sql
+sql
 SET FOREIGN_KEY_CHECKS = 0;
 
 TRUNCATE TABLE order_items;
@@ -191,22 +179,21 @@ SET FOREIGN_KEY_CHECKS = 1;
 UPDATE products
 SET inventory = 10
 WHERE id = 1;
-```
 
 ---
 
 ### Run Flash Sale Test
 
-```bash
+bash
 php tests/FlashSaleTest.php
-```
+
 
 Expected Result:
 
-```text
+text
 SUCCESS : 10
 FAILED  : 90
-```
+
 
 Karena stok produk hanya tersedia 10 unit.
 
@@ -222,12 +209,11 @@ Untuk mencegah overselling saat flash sale, aplikasi menggunakan:
 
 Contoh:
 
-```sql
+sql
 SELECT *
 FROM products
 WHERE id = ?
 FOR UPDATE;
-```
 
 Dengan pendekatan ini, hanya satu transaksi yang dapat mengubah stok produk pada satu waktu.
 
@@ -235,7 +221,7 @@ Dengan pendekatan ini, hanya satu transaksi yang dapat mengubah stok produk pada
 
 ## Project Structure
 
-```text
+text
 application/
 ├── controllers/
 │   └── api/
@@ -252,7 +238,6 @@ tests/
 
 schema.sql
 README.md
-```
 
 ---
 
